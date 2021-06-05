@@ -143,7 +143,7 @@
 
     btnScreenshot.onclick = function() {
         let data = snap();
-        var newTab = window.open();
+        let newTab = window.open();
         newTab.document.write('<img src="'+data+'"/>');
     }
 
@@ -165,28 +165,9 @@
         videoElement.requestFullscreen();
     });
 
-    // getDevices().then(gotDevices);
-
     getStream().then(getDevices).then(gotDevices);
 
     function getDevices() {
-        // navigator.getUserMedia(
-        //     {
-        //         video: true,
-        //         audio: true
-        //     },
-        //     // successCallback
-        //     function(localMediaStream) {
-        //     },
-
-        //     // errorCallback
-        //     function(err) {
-        //         if(err === PERMISSION_DENIED) {
-
-        //         }
-        //     }
-        // );
-        // AFAICT in Safari this only gets default devices until gUM is called :/
         return navigator.mediaDevices.enumerateDevices();
     }
 
@@ -219,7 +200,7 @@
             video: {deviceId: videoSource ? {exact: videoSource} : undefined}
         };
 
-        constraints.audio = {
+        const audioFixConstraints = {
             autoGainControl: false,
             echoCancellation: {exact: false},
             googEchoCancellation: {exact: false},
@@ -233,7 +214,12 @@
             googTypingNoiseDetection: {exact: false},
             googAudioMirroring: {exact: false},
             googNoiseReduction: {exact: false}
-        }
+        };
+
+        constraints.audio = {
+            ...constraints.audio,
+            ...audioFixConstraints
+        };
 
         //add resolution constraints
         constraints.video = {
