@@ -1,17 +1,57 @@
 <html>
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.min.css" integrity="sha512-P5MgMn1jBN01asBgU0z60Qk4QxiXo86+wlFahKrsQf37c9cro517WzVSPPV1tDKzhku2iJ2FVgL67wG03SGnNA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" integrity="sha512-OdEXQYCOldjqUEsuMKsZRj93Ht23QRlhIb8E/X0sbwZhme8eUw6g8q7AdxGJKakcBbv7+/PX0Gc2btf7Ru8cZA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" integrity="sha512-jQqzj2vHVxA/yCojT8pVZjKGOe9UmoYvnOuM/2sQ110vxiajBU+4WkyRs1ODMmd4AfntwUEV4J+VfM6DkfjLRg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        video {
+            object-fit: fill;
+        }
+        video:fullscreen {
+            object-fit: contain;
+        }
+        video:fullscreen::-webkit-media-controls-enclosure {
+            display:none !important;
+        }
+    </style>
+</head>
 <body style="background-color: #444444; margin: 0;">
     <div style="width: 90%; margin: auto;">
         <div style="position: relative; padding-bottom: 56.25%; height: 0;">
-            <video autoplay playsinline style="background-color: #000; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: fill;"></video>
+            <video autoplay playsinline style="background-color: #000; position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></video>
         </div>
-    </div>
-    <div style="text-align: center;">
-        <select id="audioSource"></select>
-        <select id="videoSource"></select>
-        <button type="button" id="res360p">360p</button>
-        <button type="button" id="res720p">720p</button>
-        <button type="button" id="res1080p">1080p</button>
-        <button type="button" id="stop">Stop</button>
+
+        <div class="d-flex justify-content-between my-3">
+            <div class="">
+                <div class="d-flex align-items-center">
+                    <button type="button" class="btn btn-danger" id="stop">
+                        <i class="fas fa-stop"></i>
+                    </button>
+                    <button type="button" class="btn btn-primary mx-1" id="btn-vol-mute">
+                        <i class="fas fa-volume-mute"></i>
+                    </button>
+                    <input type="range" class="custom-range" min="0" max="1" step="0.05" value="1" id="volume-control">
+                </div>
+            </div>
+            <div class="">
+                <button type="button" class="btn btn-primary" id="res360p">360p</button>
+                <button type="button" class="btn btn-primary" id="res720p">720p</button>
+                <button type="button" class="btn btn-primary" id="res1080p">1080p</button>
+            </div>
+            <div>
+                <button type="button" class="btn btn-primary" id="fullscreen">
+                    <i class="fas fa-expand"></i>
+                </button>
+            </div>
+        </div>
+        <div class="row my-5">
+            <div class="col">
+                <select id="videoSource" class="form-control"></select>
+            </div>
+            <div class="col">
+                <select id="audioSource" class="form-control"></select>
+            </div>
+        </div>
     </div>
 </body>
 
@@ -25,6 +65,10 @@
     const btn720p = document.querySelector('button#res720p');
     const btn1080p = document.querySelector('button#res1080p');
     const btnStop = document.querySelector('button#stop');
+    const btnFullscreen = document.querySelector('button#fullscreen');
+
+    const volumnControlElement = document.querySelector('#volume-control');
+    const btnMute = document.querySelector('#btn-vol-mute');
 
     const constraints360p = {
         width: {
@@ -58,6 +102,8 @@
     audioSelect.onchange = getStream;
     videoSelect.onchange = getStream;
 
+    volumnControlElement.onchange = changeVolume;
+
     btn360p.onclick = function() {
         currentResConstraints = constraints360p;
         getStream();
@@ -77,6 +123,14 @@
                 track.stop();
             });
         }
+    };
+
+    btnFullscreen.onclick = function() {
+        videoElement.requestFullscreen();
+    };
+
+    btnMute.onclick = function() {
+        videoElement.muted = !videoElement.muted;
     };
 
     // getDevices().then(gotDevices);
@@ -168,6 +222,12 @@
         videoSelect.selectedIndex = [...videoSelect.options].
         findIndex(option => option.text === stream.getVideoTracks()[0].label);
         videoElement.srcObject = stream;
+        changeVolume();
+    }
+
+    function changeVolume()
+    {
+        videoElement.volume = volumnControlElement.value;
     }
 
     function handleError(error) {
