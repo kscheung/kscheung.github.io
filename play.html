@@ -19,29 +19,25 @@
     <div style="width: 90%; margin: auto;">
         <div style="position: relative; padding-bottom: 56.25%; height: 0;">
             <video autoplay playsinline style="background-color: #000; position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></video>
+            <canvas class="d-none"></canvas>
         </div>
 
         <div class="d-flex justify-content-between my-3">
             <div class="">
                 <div class="d-flex align-items-center">
-                    <button type="button" class="btn btn-danger" id="stop">
-                        <i class="fas fa-stop"></i>
-                    </button>
-                    <button type="button" class="btn btn-primary mx-1" id="btn-vol-mute">
-                        <i class="fas fa-volume-mute"></i>
-                    </button>
+                    <button type="button" class="btn btn-danger" id="stop"><i class="fas fa-stop"></i></button>
+                    <button type="button" class="btn btn-primary mx-1" id="btn-vol-mute"><i class="fas fa-volume-mute"></i></button>
                     <input type="range" class="custom-range" min="0" max="1" step="0.05" value="1" id="volume-control">
                 </div>
             </div>
             <div class="">
-                <button type="button" class="btn btn-primary" id="res360p">360p</button>
-                <button type="button" class="btn btn-primary" id="res720p">720p</button>
-                <button type="button" class="btn btn-primary" id="res1080p">1080p</button>
+                <button type="button" class="btn btn-primary btn-sm" id="res360p">360p</button>
+                <button type="button" class="btn btn-primary btn-success btn-sm" id="res720p">720p</button>
+                <button type="button" class="btn btn-primary btn-sm" id="res1080p">1080p</button>
             </div>
             <div>
-                <button type="button" class="btn btn-primary" id="fullscreen">
-                    <i class="fas fa-expand"></i>
-                </button>
+                <button type="button" class="btn btn-primary" id="btnScreenshot"><i class="fas fa-camera"></i></button>
+                <button type="button" class="btn btn-primary" id="fullscreen"><i class="fas fa-expand"></i></button>
             </div>
         </div>
         <div class="row my-5">
@@ -58,6 +54,7 @@
 <script>
 (function() {
     const videoElement = document.querySelector('video');
+    const canvasElement = document.querySelector('canvas');
     const audioSelect = document.querySelector('select#audioSource');
     const videoSelect = document.querySelector('select#videoSource');
 
@@ -69,6 +66,8 @@
 
     const volumnControlElement = document.querySelector('#volume-control');
     const btnMute = document.querySelector('#btn-vol-mute');
+
+    const btnScreenshot = document.querySelector('#btnScreenshot');
 
     const constraints360p = {
         width: {
@@ -106,14 +105,23 @@
 
     btn360p.onclick = function() {
         currentResConstraints = constraints360p;
+        btn360p.classList.add("btn-success");
+        btn720p.classList.remove("btn-success");
+        btn1080p.classList.remove("btn-success");
         getStream();
     };
     btn720p.onclick = function() {
         currentResConstraints = constraints720p;
+        btn360p.classList.remove("btn-success");
+        btn720p.classList.add("btn-success");
+        btn1080p.classList.remove("btn-success");
         getStream();
     };
     btn1080p.onclick = function() {
         currentResConstraints = constraints1080p;
+        btn360p.classList.remove("btn-success");
+        btn720p.classList.remove("btn-success");
+        btn1080p.classList.add("btn-success");
         getStream();
     };
 
@@ -132,6 +140,30 @@
     btnMute.onclick = function() {
         videoElement.muted = !videoElement.muted;
     };
+
+    btnScreenshot.onclick = function() {
+        let data = snap();
+        var newTab = window.open();
+        newTab.document.write('<img src="'+data+'"/>');
+    }
+
+    document.addEventListener('keyup', (e) => {
+        if (e.key === "m") {
+            btnMute.click();
+        } else if (e.key === 's') {
+            btnScreenshot.click();
+        } else if (e.key === 'Enter') {
+            btnFullscreen.click();
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if(document.activeElement.toString() == '[object HTMLButtonElement]') document.activeElement.blur();
+    });
+
+    videoElement.addEventListener('dblclick', function (e) {
+        videoElement.requestFullscreen();
+    });
 
     // getDevices().then(gotDevices);
 
@@ -232,6 +264,16 @@
 
     function handleError(error) {
         console.error('Error: ', error);
+    }
+
+    function snap() {
+        canvasElement.height = currentResConstraints.height.min;
+        canvasElement.width = currentResConstraints.width.min;
+        let context = canvasElement.getContext('2d');
+        context.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+        let data = canvasElement.toDataURL('image/png');
+        return data;
     }
 })();
 </script>
