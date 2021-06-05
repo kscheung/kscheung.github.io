@@ -75,6 +75,22 @@
     // getStream().then(getDevices).then(gotDevices);
 
     function getDevices() {
+        navigator.getUserMedia(
+            {
+                video: true,
+                audio: true
+            },
+            // successCallback
+            function(localMediaStream) {
+            },
+
+            // errorCallback
+            function(err) {
+                if(err === PERMISSION_DENIED) {
+
+                }
+            }
+        );
         // AFAICT in Safari this only gets default devices until gUM is called :/
         return navigator.mediaDevices.enumerateDevices();
     }
