@@ -133,6 +133,22 @@
             video: {deviceId: videoSource ? {exact: videoSource} : undefined}
         };
 
+        constraints.audio = {
+            autoGainControl: false,
+            echoCancellation: {exact: false},
+            googEchoCancellation: {exact: false},
+            googExperimentalEchoCancellation: {exact: false},
+            googDAEchoCancellation: {exact: false},
+            googAutoGainControl: {exact: false},
+            googExperimentalAutoGainControl: {exact: false},
+            googNoiseSuppression: {exact: false},
+            googExperimentalNoiseSuppression: {exact: false},
+            googHighpassFilter: {exact: false},
+            googTypingNoiseDetection: {exact: false},
+            googAudioMirroring: {exact: false},
+            googNoiseReduction: {exact: false}
+        }
+
         //add resolution constraints
         constraints.video = {
             ...constraints.video,
