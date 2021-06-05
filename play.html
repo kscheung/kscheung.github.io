@@ -1,7 +1,4 @@
 <html>
-<head>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-</head>
 <body style="background-color: #444444; margin: 0;">
     <div style="width: 90%; margin: auto;">
         <div style="position: relative; padding-bottom: 56.25%; height: 0;">
@@ -19,7 +16,7 @@
 </body>
 
 <script>
-(function($) {
+(function() {
     const videoElement = document.querySelector('video');
     const audioSelect = document.querySelector('select#audioSource');
     const videoSelect = document.querySelector('select#videoSource');
@@ -30,18 +27,30 @@
     const btnStop = document.querySelector('button#stop');
 
     const constraints360p = {
-        minWidth: 640,
-        minHeight: 360
+        width: {
+            min: 640
+        },
+        height: {
+            min: 360
+        }
     };
 
     const constraints720p = {
-        minWidth: 1280,
-        minHeight: 720
+        width: {
+            min: 1280
+        },
+        height: {
+            min: 720
+        }
     };
 
     const constraints1080p = {
-        minWidth: 1920,
-        minHeight: 1080
+        width: {
+            min: 1920
+        },
+        height: {
+            min: 1080
+        }
     };
 
     var currentResConstraints = constraints720p;
@@ -70,27 +79,27 @@
         }
     };
 
-    getDevices().then(gotDevices);
+    // getDevices().then(gotDevices);
 
-    // getStream().then(getDevices).then(gotDevices);
+    getStream().then(getDevices).then(gotDevices);
 
     function getDevices() {
-        navigator.getUserMedia(
-            {
-                video: true,
-                audio: true
-            },
-            // successCallback
-            function(localMediaStream) {
-            },
+        // navigator.getUserMedia(
+        //     {
+        //         video: true,
+        //         audio: true
+        //     },
+        //     // successCallback
+        //     function(localMediaStream) {
+        //     },
 
-            // errorCallback
-            function(err) {
-                if(err === PERMISSION_DENIED) {
+        //     // errorCallback
+        //     function(err) {
+        //         if(err === PERMISSION_DENIED) {
 
-                }
-            }
-        );
+        //         }
+        //     }
+        // );
         // AFAICT in Safari this only gets default devices until gUM is called :/
         return navigator.mediaDevices.enumerateDevices();
     }
@@ -125,7 +134,12 @@
         };
 
         //add resolution constraints
-        constraints.video.mandatory = currentResConstraints;
+        constraints.video = {
+            ...constraints.video,
+            ...currentResConstraints
+        };
+
+        console.log(constraints);
 
         return navigator.mediaDevices.getUserMedia(constraints).
             then(gotStream).catch(handleError);
@@ -143,6 +157,6 @@
     function handleError(error) {
         console.error('Error: ', error);
     }
-})(jQuery);
+})();
 </script>
 </html>
