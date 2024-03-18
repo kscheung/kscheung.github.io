@@ -30,10 +30,14 @@
                     <input type="range" class="custom-range" min="0" max="1" step="0.05" value="1" id="volume-control">
                 </div>
             </div>
-            <div class="">
-                <button type="button" class="btn btn-primary btn-sm" id="res360p">360p</button>
-                <button type="button" class="btn btn-primary btn-success btn-sm" id="res720p">720p</button>
-                <button type="button" class="btn btn-primary btn-sm" id="res1080p">1080p</button>
+            <div class="res-selectors">
+                <button type="button" class="btn btn-primary btn-sm" data-res-select="res360p">360p</button>
+                <button type="button" class="btn btn-primary btn-sm" data-res-select="res360p">720p</button>
+                <button type="button" class="btn btn-primary btn-sm" data-res-select="res1080p">1080p</button>
+            </div>
+            <div class="fps-selectors">
+                <button type="button" class="btn btn-primary btn-sm" data-fps-select="fps30">30fps</button>
+                <button type="button" class="btn btn-primary btn-sm" data-fps-select="fps60">60fps</button>
             </div>
             <div>
                 <button type="button" class="btn btn-primary" id="btnScreenshot"><i class="fas fa-camera"></i></button>
@@ -58,9 +62,9 @@
     const audioSelect = document.querySelector('select#audioSource');
     const videoSelect = document.querySelector('select#videoSource');
 
-    const btn360p = document.querySelector('button#res360p');
-    const btn720p = document.querySelector('button#res720p');
-    const btn1080p = document.querySelector('button#res1080p');
+    // const btn360p = document.querySelector('button#res360p');
+    // const btn720p = document.querySelector('button#res720p');
+    // const btn1080p = document.querySelector('button#res1080p');
     const btnStop = document.querySelector('button#stop');
     const btnFullscreen = document.querySelector('button#fullscreen');
 
@@ -69,61 +73,57 @@
 
     const btnScreenshot = document.querySelector('#btnScreenshot');
 
-    const constraints360p = {
-        width: {
-            min: 640
+    const resConstraints = {
+        res360p: {
+            width: { ideal: 640 },
+            height: { ideal: 360 }
         },
-        height: {
-            min: 360
+        res720p: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+        },
+        res1080p: {
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
         }
     };
 
-    const constraints720p = {
-        width: {
-            min: 1280
+    const fpsConstraints = {
+        fps30: {
+            frameRate: { ideal: 30, exact: 30 }
         },
-        height: {
-            min: 720
+        fps60: {
+            frameRate: { ideal: 60, exact: 60 }
         }
     };
 
-    const constraints1080p = {
-        width: {
-            min: 1920
-        },
-        height: {
-            min: 1080
-        }
-    };
-
-    var currentResConstraints = constraints720p;
+    var currentResConstraints = resConstraints[localStorage.getItem('res')] || resConstraints['res1080p'];
+    var currentFpsConstraints = fpsConstraints[localStorage.getItem('fps')] || fpsConstraints['fps60'] ;
 
     audioSelect.onchange = getStream;
     videoSelect.onchange = getStream;
 
     volumnControlElement.onchange = changeVolume;
 
-    btn360p.onclick = function() {
-        currentResConstraints = constraints360p;
-        btn360p.classList.add("btn-success");
-        btn720p.classList.remove("btn-success");
-        btn1080p.classList.remove("btn-success");
-        getStream();
-    };
-    btn720p.onclick = function() {
-        currentResConstraints = constraints720p;
-        btn360p.classList.remove("btn-success");
-        btn720p.classList.add("btn-success");
-        btn1080p.classList.remove("btn-success");
-        getStream();
-    };
-    btn1080p.onclick = function() {
-        currentResConstraints = constraints1080p;
-        btn360p.classList.remove("btn-success");
-        btn720p.classList.remove("btn-success");
-        btn1080p.classList.add("btn-success");
-        getStream();
-    };
+    document.querySelectorAll('[data-res-select]').forEach(function(el) {
+        el.onclick = function() {
+            currentResConstraints = resConstraints[el.dataset.resSelect];
+            localStorage.setItem('res', el.dataset.resSelect);
+            document.querySelector('.res-selectors .btn-success').classList.remove('btn-success');
+            el.classList.add('btn-success');
+            getStream();
+        };
+    });
+
+    document.querySelectorAll('[data-fps-select]').forEach(function(el) {
+        el.onclick = function() {
+            currentFpsConstraints = fpsConstraints[el.dataset.fpsSelect];
+            localStorage.setItem('fps', el.dataset.fpsSelect);
+            document.querySelector('.fps-selectors .btn-success').classList.remove('btn-success');
+            el.classList.add('btn-success');
+            getStream();
+        };
+    });
 
     btnStop.onclick = function() {
         if (window.stream) {
@@ -224,10 +224,14 @@
         //add resolution constraints
         constraints.video = {
             ...constraints.video,
-            ...currentResConstraints
+            ...currentResConstraints,
+            ...currentFpsConstraints,
         };
 
         console.log(constraints);
+
+        document.querySelector('[data-res-select="'+(localStorage.getItem('res') || 'res1080p')+'"]').classList.add('btn-success');
+        document.querySelector('[data-fps-select="'+(localStorage.getItem('fps') || 'fps60')+'"]').classList.add('btn-success');
 
         return navigator.mediaDevices.getUserMedia(constraints).
             then(gotStream).catch(handleError);
