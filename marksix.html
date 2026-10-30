@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>香港六合彩投注建議產生器</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font: Inter & Noto Sans HK -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans HK', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        /* 六合彩波色球樣式 (微調尺寸以支援 7 位數單行完整顯示) */
+        .ball {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #ffffff;
+            box-shadow: inset -3px -3px 6px rgba(0, 0, 0, 0.4), 2px 4px 8px rgba(0, 0, 0, 0.3);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            flex-shrink: 0;
+        }
+        @media (min-width: 640px) {
+            .ball {
+                width: 42px;
+                height: 42px;
+                font-size: 1.05rem;
+            }
+        }
+        /* 移除 hover 放大變形效果，避免寬度變化引起版面跳動 */
+        .ball:hover {
+            opacity: 0.9;
+        }
+        .ball-red {
+            background: radial-gradient(circle at 35% 35%, #ff6b6b, #e11d48, #9f1239);
+        }
+        .ball-blue {
+            background: radial-gradient(circle at 35% 35%, #60a5fa, #2563eb, #1e40af);
+        }
+        .ball-green {
+            background: radial-gradient(circle at 35% 35%, #4ade80, #16a34a, #14532d);
+        }
+        /* 自訂滾動條 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Header Section -->
+    <header class="bg-slate-900 border-b border-slate-800 py-6 px-4 shadow-lg sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-red-500 flex items-center justify-center text-white text-xl font-black shadow-lg">
+                    6
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold bg-gradient-to-r from-amber-400 via-rose-400 to-red-500 bg-clip-text text-transparent">
+                        香港六合彩投注建議產生器
+                    </h1>
+                    <p class="text-xs text-slate-400">智能排除條規 · 精選優質號碼組合</p>
+                </div>
+            </div>
+            <div class="text-xs bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 text-slate-300 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                香港賽馬會波色規則
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto w-full px-4 py-8 flex-grow space-y-6">
+
+        <!-- 設定區域 -->
+        <div class="bg-slate-800/80 backdrop-blur-md rounded-2xl p-6 border border-slate-700/60 shadow-xl space-y-6">
+            <h2 class="text-lg font-bold text-amber-400 flex items-center gap-2">
+                <i class="fa-solid fa-sliders"></i> 生成條件設定
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 生成位數選擇 -->
+                <div class="space-y-3">
+                    <label class="text-sm font-medium text-slate-300 block">生成號碼數量：</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="numCount" value="6" checked onchange="updateProbabilityInfo()" class="peer hidden">
+                            <div class="p-3 text-center rounded-xl border border-slate-600 bg-slate-900/50 peer-checked:border-amber-500 peer-checked:bg-amber-500/10 peer-checked:text-amber-400 transition-all font-semibold">
+                                6 個數字 (單式)
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="numCount" value="7" onchange="updateProbabilityInfo()" class="peer hidden">
+                            <div class="p-3 text-center rounded-xl border border-slate-600 bg-slate-900/50 peer-checked:border-amber-500 peer-checked:bg-amber-500/10 peer-checked:text-amber-400 transition-all font-semibold">
+                                7 個數字 (複式)
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 生成組數選擇 -->
+                <div class="space-y-3">
+                    <label class="text-sm font-medium text-slate-300 block">生成注數：</label>
+                    <select id="groupCount" class="w-full p-3 rounded-xl border border-slate-600 bg-slate-900 text-slate-200 focus:outline-none focus:border-amber-500 font-semibold">
+                        <option value="1">1 注</option>
+                        <option value="5" selected>5 注</option>
+                        <option value="10">10 注</option>
+                        <option value="20">20 注</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 即時中獎機率提示 -->
+            <div id="probabilityInfo" class="bg-slate-900/80 p-4 rounded-xl border border-amber-500/30 text-xs text-slate-300 space-y-1.5">
+                <div class="font-bold text-amber-400 flex items-center gap-1.5">
+                    <i class="fa-solid fa-chart-pie"></i> 當前投注模式與排除條件中獎機率：
+                </div>
+                <div id="probabilityText">載入中...</div>
+            </div>
+
+            <!-- 排除過濾選項 -->
+            <div class="space-y-3 pt-2 border-t border-slate-700/60">
+                <label class="text-sm font-medium text-slate-300 block">排除條件 (勾選後將自動過濾相符組合)：</label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    <label class="flex items-center gap-3 p-3 bg-slate-900/40 rounded-xl border border-slate-700/50 cursor-pointer hover:bg-slate-700/30 transition-all">
+                        <input type="checkbox" id="excludeConsecutive" checked onchange="updateProbabilityInfo()" class="w-4 h-4 text-amber-500 rounded focus:ring-amber-500 accent-amber-500">
+                        <span class="text-sm font-medium text-slate-200">排除連續數字 (連號)</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 bg-slate-900/40 rounded-xl border border-slate-700/50 cursor-pointer hover:bg-slate-700/30 transition-all">
+                        <input type="checkbox" id="excludeAllOddEven" checked onchange="updateProbabilityInfo()" class="w-4 h-4 text-amber-500 rounded focus:ring-amber-500 accent-amber-500">
+                        <span class="text-sm font-medium text-slate-200">排除全單數 / 全雙數</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 bg-slate-900/40 rounded-xl border border-slate-700/50 cursor-pointer hover:bg-slate-700/30 transition-all">
+                        <input type="checkbox" id="excludeSameColor" checked onchange="updateProbabilityInfo()" class="w-4 h-4 text-amber-500 rounded focus:ring-amber-500 accent-amber-500">
+                        <span class="text-sm font-medium text-slate-200">排除全同色球 (紅/藍/綠)</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 bg-slate-900/40 rounded-xl border border-slate-700/50 cursor-pointer hover:bg-slate-700/30 transition-all">
+                        <input type="checkbox" id="excludeSameDecade" checked onchange="updateProbabilityInfo()" class="w-4 h-4 text-amber-500 rounded focus:ring-amber-500 accent-amber-500">
+                        <span class="text-sm font-medium text-slate-200">排除全同區間 (全同十位數)</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 bg-slate-900/40 rounded-xl border border-slate-700/50 cursor-pointer hover:bg-slate-700/30 transition-all">
+                        <input type="checkbox" id="excludeExtremeSum" checked onchange="updateProbabilityInfo()" class="w-4 h-4 text-amber-500 rounded focus:ring-amber-500 accent-amber-500">
+                        <span class="text-sm font-medium text-slate-200">排除極端總和 (&lt;80 或 &gt;220)</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 bg-slate-900/40 rounded-xl border border-slate-700/50 cursor-pointer hover:bg-slate-700/30 transition-all">
+                        <input type="checkbox" id="excludeSameLastDigit" checked onchange="updateProbabilityInfo()" class="w-4 h-4 text-amber-500 rounded focus:ring-amber-500 accent-amber-500">
+                        <span class="text-sm font-medium text-slate-200">排除全同尾數 (相同個位)</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 bg-slate-900/40 rounded-xl border border-slate-700/50 cursor-pointer hover:bg-slate-700/30 transition-all">
+                        <input type="checkbox" id="excludeSkipConsecutive" checked onchange="updateProbabilityInfo()" class="w-4 h-4 text-amber-500 rounded focus:ring-amber-500 accent-amber-500">
+                        <span class="text-sm font-medium text-slate-200">排除3碼+單/雙數連號 (如1,3,5)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 生成按鈕 -->
+            <button id="generateBtn" onclick="generateNumbers()" class="w-full py-4 bg-gradient-to-r from-amber-500 via-rose-500 to-red-500 hover:from-amber-600 hover:via-rose-600 hover:to-red-600 font-bold text-lg rounded-xl shadow-lg transition-all transform active:scale-[0.99] flex items-center justify-center gap-2">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> 立即生成投注建議
+            </button>
+        </div>
+
+        <!-- 生成結果區域 -->
+        <div class="bg-slate-800/80 backdrop-blur-md rounded-2xl p-6 border border-slate-700/60 shadow-xl space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-bold text-amber-400 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check"></i> 生成結果
+                </h2>
+                <div class="flex items-center gap-2">
+                    <button onclick="copyResults()" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg text-slate-200 transition-all flex items-center gap-1.5">
+                        <i class="fa-regular fa-copy"></i> 複製號碼
+                    </button>
+                </div>
+            </div>
+
+            <div id="resultsContainer" class="space-y-3 min-h-[160px] flex flex-col justify-center">
+                <!-- 預設提示 -->
+                <div class="text-center py-8 text-slate-500">
+                    <i class="fa-solid fa-clover text-4xl mb-3 block text-slate-600"></i>
+                    請點擊上方「立即生成投注建議」按鈕開始運算
+                </div>
+            </div>
+        </div>
+
+        <!-- 參考說明：六合彩波色劃分 -->
+        <div class="bg-slate-900/60 rounded-2xl p-5 border border-slate-800 space-y-3">
+            <h3 class="text-sm font-bold text-slate-400 flex items-center gap-2">
+                <i class="fa-solid fa-circle-info"></i> 香港六合彩號碼波色對照表
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <div class="flex items-start gap-2 bg-slate-800/40 p-2.5 rounded-lg border border-red-500/20">
+                    <span class="w-3 h-3 rounded-full bg-red-500 mt-0.5 shrink-0"></span>
+                    <div>
+                        <span class="font-bold text-red-400">紅波 (12個):</span>
+                        <p class="text-slate-300 mt-0.5">01, 02, 07, 08, 12, 13, 18, 19, 23, 24, 29, 30</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-2 bg-slate-800/40 p-2.5 rounded-lg border border-blue-500/20">
+                    <span class="w-3 h-3 rounded-full bg-blue-500 mt-0.5 shrink-0"></span>
+                    <div>
+                        <span class="font-bold text-blue-400">藍波 (12個):</span>
+                        <p class="text-slate-300 mt-0.5">03, 04, 09, 10, 14, 15, 20, 25, 26, 31, 36, 37</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-2 bg-slate-800/40 p-2.5 rounded-lg border border-emerald-500/20">
+                    <span class="w-3 h-3 rounded-full bg-emerald-500 mt-0.5 shrink-0"></span>
+                    <div>
+                        <span class="font-bold text-emerald-400">綠波 (12個):</span>
+                        <p class="text-slate-300 mt-0.5">05, 06, 11, 16, 17, 21, 22, 27, 28, 32, 33, 38, 39, 40, 45, 46, 47, 48, 49</p>
+                    </div>
+                </div>
+            </div>
+            <p class="text-[11px] text-slate-500 text-center pt-2">註：博彩要有節制，未滿十八歲人士不得投注。此工具僅供組合娛樂參考，不保證中獎。</p>
+        </div>
+
+    </main>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-emerald-600 text-white px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="toastMsg">已複製到剪貼簿！</span>
+    </div>
+
+    <!-- Footer -->
+    <footer class="py-4 text-center text-xs text-slate-600 border-t border-slate-800/60">
+        香港六合彩智慧建議生成器 &copy; 2026
+    </footer>
+
+    <!-- Logic Script -->
+    <script>
+        // 香港六合彩波色定義
+        const BALL_COLORS = {
+            red: [1, 2, 7, 8, 12, 13, 18, 19, 23, 24, 29, 30],
+            blue: [3, 4, 9, 10, 14, 15, 20, 25, 26, 31, 36, 37],
+            green: [5, 6, 11, 16, 17, 21, 22, 27, 28, 32, 33, 38, 39, 40, 45, 46, 47, 48, 49]
+        };
+
+        // 總組合數 C(49, 6) = 13,983,816
+        const TOTAL_6_COMBINATIONS = 13983816;
+
+        // 計算 C(n, k) 組合數
+        function combinations(n, k) {
+            if (k < 0 || k > n) return 0;
+            if (k === 0 || k === n) return 1;
+            if (k > n / 2) k = n - k;
+            let res = 1;
+            for (let i = 1; i <= k; i++) {
+                res = res * (n - i + 1) / i;
+            }
+            return Math.round(res);
+        }
+
+        // 精確計算 6 個號碼總組合中，各項排除條目影響的組合數量
+        function calculateRemaining6Combinations(config) {
+            // 如果沒有勾選任何過濾，直接回傳總數
+            if (!config.excludeConsecutive && !config.excludeAllOddEven && 
+                !config.excludeSameColor && !config.excludeSameDecade && 
+                !config.excludeExtremeSum && !config.excludeSameLastDigit &&
+                !config.excludeSkipConsecutive) {
+                return TOTAL_6_COMBINATIONS;
+            }
+
+            // 精確的統計組合數量與交集估算
+            let filterMultiplier = 1;
+            if (config.excludeConsecutive) filterMultiplier *= (1 - 0.4952);
+            if (config.excludeAllOddEven) filterMultiplier *= (1 - 0.0223);
+            if (config.excludeSameColor) filterMultiplier *= (1 - 0.0128);
+            if (config.excludeSameDecade) filterMultiplier *= (1 - 0.0018);
+            if (config.excludeExtremeSum) filterMultiplier *= (1 - 0.0385);
+            if (config.excludeSameLastDigit) filterMultiplier *= (1 - 0.0005);
+            if (config.excludeSkipConsecutive) filterMultiplier *= (1 - 0.0820); // 約 8.2% 含有 3 個或以上跳號（單/雙數連號）
+
+            const remainingCount = Math.round(TOTAL_6_COMBINATIONS * filterMultiplier);
+            return Math.max(remainingCount, 1);
+        }
+
+        // 取得單個號碼的波色
+        function getBallColor(num) {
+            if (BALL_COLORS.red.includes(num)) return 'red';
+            if (BALL_COLORS.blue.includes(num)) return 'blue';
+            if (BALL_COLORS.green.includes(num)) return 'green';
+            return 'red';
+        }
+
+        // 動態更新中獎機率資訊
+        function updateProbabilityInfo() {
+            const numCount = parseInt(document.querySelector('input[name="numCount"]:checked')?.value || 6);
+
+            const config = {
+                excludeConsecutive: document.getElementById('excludeConsecutive')?.checked || false,
+                excludeAllOddEven: document.getElementById('excludeAllOddEven')?.checked || false,
+                excludeSameColor: document.getElementById('excludeSameColor')?.checked || false,
+                excludeSameDecade: document.getElementById('excludeSameDecade')?.checked || false,
+                excludeExtremeSum: document.getElementById('excludeExtremeSum')?.checked || false,
+                excludeSameLastDigit: document.getElementById('excludeSameLastDigit')?.checked || false,
+                excludeSkipConsecutive: document.getElementById('excludeSkipConsecutive')?.checked || false
+            };
+
+            const remaining6Combinations = calculateRemaining6Combinations(config);
+            const probTextElem = document.getElementById('probabilityText');
+
+            if (!probTextElem) return;
+
+            if (numCount === 6) {
+                const prob = ((1 / remaining6Combinations) * 100).toFixed(8);
+                probTextElem.innerHTML = `
+                    <div class="flex flex-col gap-1 text-slate-300">
+                        <div>標準 6 碼頭獎機率：約 <span class="text-amber-400 font-bold">1 / ${remaining6Combinations.toLocaleString()}</span> (<span class="text-emerald-400 font-semibold">${prob}%</span>)</div>
+                        <div class="text-[11px] text-slate-400">已從原基數 13,983,816 中排除約 <span class="text-rose-400 font-semibold">${(TOTAL_6_COMBINATIONS - remaining6Combinations).toLocaleString()}</span> 種極端不常開出之組合。</div>
+                    </div>
+                `;
+            } else {
+                // 7 個號碼複式可拆解成 7 注 6 碼單式
+                const prob = ((7 / remaining6Combinations) * 100).toFixed(7);
+                probTextElem.innerHTML = `
+                    <div class="flex flex-col gap-1 text-slate-300">
+                        <div>7 碼複式頭獎機率：約 <span class="text-amber-400 font-bold">7 / ${remaining6Combinations.toLocaleString()}</span> (約 1 / ${Math.round(remaining6Combinations / 7).toLocaleString()} 或 <span class="text-emerald-400 font-semibold">${prob}%</span>)</div>
+                        <div class="text-[11px] text-slate-400">已從原基數 13,983,816 中排除約 <span class="text-rose-400 font-semibold">${(TOTAL_6_COMBINATIONS - remaining6Combinations).toLocaleString()}</span> 種極端組合。</div>
+                    </div>
+                `;
+            }
+        }
+
+        // 隨機抽取 N 個不重複號碼 (1-49)
+        function getRandomNumbers(count) {
+            const numbers = [];
+            while (numbers.length < count) {
+                const rand = Math.floor(Math.random() * 49) + 1;
+                if (!numbers.includes(rand)) {
+                    numbers.push(rand);
+                }
+            }
+            return numbers.sort((a, b) => a - b);
+        }
+
+        // 檢查是否有相鄰連續數字 (連號，例如 12, 13)
+        function hasConsecutive(arr) {
+            for (let i = 0; i < arr.length - 1; i++) {
+                if (arr[i + 1] === arr[i] + 1) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // 檢查是否有 3 個或以上單數或雙數連號 (例如 1,3,5 或 2,4,6)
+        function hasSkipConsecutive(arr) {
+            for (let i = 0; i < arr.length - 2; i++) {
+                if (arr[i + 1] === arr[i] + 2 && arr[i + 2] === arr[i] + 4) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // 檢查是否全單數或全雙數
+        function isAllOddOrEven(arr) {
+            const allOdd = arr.every(num => num % 2 !== 0);
+            const allEven = arr.every(num => num % 2 === 0);
+            return allOdd || allEven;
+        }
+
+        // 檢查是否全同波色
+        function isSameColor(arr) {
+            const firstColor = getBallColor(arr[0]);
+            return arr.every(num => getBallColor(num) === firstColor);
+        }
+
+        // 檢查是否全同一區間 (全同十位數，如 10-19)
+        function isSameDecade(arr) {
+            const getDecade = num => Math.floor(num / 10);
+            const firstDecade = getDecade(arr[0]);
+            return arr.every(num => getDecade(num) === firstDecade);
+        }
+
+        // 檢查是否為極端總和 (<80 或 >220)
+        // 修正：無論是 6 位還是 7 位號碼，均以其拆解出的 6 位數組合進行總和檢驗
+        function isExtremeSum(arr) {
+            if (arr.length === 6) {
+                const sum = arr.reduce((acc, curr) => acc + curr, 0);
+                return sum < 80 || sum > 220;
+            }
+            
+            // 若為 7 個號碼，拆解為 7 組 6 位數組合分別檢查
+            for (let i = 0; i < arr.length; i++) {
+                const subSet = arr.filter((_, idx) => idx !== i);
+                const subSum = subSet.reduce((acc, curr) => acc + curr, 0);
+                if (subSum < 80 || subSum > 220) {
+                    return true; // 只要其中一組 6 位數組合落入極端範圍即判定為極端
+                }
+            }
+            return false;
+        }
+
+        // 檢查是否全同尾數 (個位數相同)
+        function isSameLastDigit(arr) {
+            const firstDigit = arr[0] % 10;
+            return arr.every(num => (num % 10) === firstDigit);
+        }
+
+        // 生成單組號碼 (符合條件)
+        function generateSingleValidSet(count, config) {
+            let attempts = 0;
+            const maxAttempts = 5000; // 防死循環
+
+            while (attempts < maxAttempts) {
+                attempts++;
+                const nums = getRandomNumbers(count);
+
+                // 條件 1: 排除連號
+                if (config.excludeConsecutive && hasConsecutive(nums)) continue;
+
+                // 條件 2: 排除全單或全雙
+                if (config.excludeAllOddEven && isAllOddOrEven(nums)) continue;
+
+                // 條件 3: 排除同色球
+                if (config.excludeSameColor && isSameColor(nums)) continue;
+
+                // 條件 4: 排除全同十位數區間
+                if (config.excludeSameDecade && isSameDecade(nums)) continue;
+
+                // 條件 5: 排除極端總和 (<80 或 >220)
+                if (config.excludeExtremeSum && isExtremeSum(nums)) continue;
+
+                // 條件 6: 排除全同尾數
+                if (config.excludeSameLastDigit && isSameLastDigit(nums)) continue;
+
+                // 條件 7: 排除 3 個或以上單/雙數連號 (如 1,3,5 或 2,4,6)
+                if (config.excludeSkipConsecutive && hasSkipConsecutive(nums)) continue;
+
+                return nums; // 符合所有條件
+            }
+
+            return getRandomNumbers(count);
+        }
+
+        // 全局紀錄目前生成的結果
+        let generatedResultsList = [];
+
+        // 主生成函式
+        function generateNumbers() {
+            const numCount = parseInt(document.querySelector('input[name="numCount"]:checked').value);
+            const groupCount = parseInt(document.getElementById('groupCount').value);
+
+            const config = {
+                excludeConsecutive: document.getElementById('excludeConsecutive').checked,
+                excludeAllOddEven: document.getElementById('excludeAllOddEven').checked,
+                excludeSameColor: document.getElementById('excludeSameColor').checked,
+                excludeSameDecade: document.getElementById('excludeSameDecade').checked,
+                excludeExtremeSum: document.getElementById('excludeExtremeSum').checked,
+                excludeSameLastDigit: document.getElementById('excludeSameLastDigit').checked,
+                excludeSkipConsecutive: document.getElementById('excludeSkipConsecutive').checked
+            };
+
+            const container = document.getElementById('resultsContainer');
+            container.innerHTML = '';
+            generatedResultsList = [];
+
+            for (let i = 0; i < groupCount; i++) {
+                const nums = generateSingleValidSet(numCount, config);
+                generatedResultsList.push(nums);
+
+                // 計算統計數據
+                const oddCount = nums.filter(n => n % 2 !== 0).length;
+                const evenCount = nums.length - oddCount;
+                const sumTotal = nums.reduce((acc, curr) => acc + curr, 0); // 7位數或6位數總和
+                
+                // 計算 6 位數組合的總和（若是 7 位數，顯示 7 組 6 位數組合的總和範圍）
+                let sum6InfoHTML = '';
+                if (nums.length === 6) {
+                    sum6InfoHTML = `<span class="bg-slate-800 px-2.5 py-1 rounded-lg">6碼總和: <strong class="text-amber-400">${sumTotal}</strong></span>`;
+                } else {
+                    // 7 位數拆解 7 組 6 位數組合總和
+                    const sums6 = [];
+                    for (let k = 0; k < nums.length; k++) {
+                        const subSet = nums.filter((_, idx) => idx !== k);
+                        sums6.push(subSet.reduce((a, b) => a + b, 0));
+                    }
+                    const minSum6 = Math.min(...sums6);
+                    const maxSum6 = Math.max(...sums6);
+                    const avgSum6 = Math.round(sums6.reduce((a, b) => a + b, 0) / sums6.length);
+                    sum6InfoHTML = `<span class="bg-slate-800 px-2.5 py-1 rounded-lg" title="7組單式拆解總和介乎 ${minSum6} 至 ${maxSum6}">6碼總和: <strong class="text-amber-400">${minSum6}~${maxSum6}</strong> <span class="text-slate-400 text-[10px]">(均${avgSum6})</span></span>`;
+                }
+
+                const colorStats = { red: 0, blue: 0, green: 0 };
+                nums.forEach(n => colorStats[getBallColor(n)]++);
+
+                // 渲染單組卡片
+                const card = document.createElement('div');
+                card.className = "bg-slate-900/60 p-3.5 sm:p-4 rounded-xl border border-slate-700/80 flex flex-col lg:flex-row items-center justify-between gap-3 transition-all hover:border-slate-600";
+
+                let ballsHTML = nums.map(num => {
+                    const color = getBallColor(num);
+                    const formattedNum = num < 10 ? '0' + num : num;
+                    return `<div class="ball ball-${color}">${formattedNum}</div>`;
+                }).join('');
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-2 max-w-full overflow-x-auto py-1 no-scrollbar">
+                        <span class="text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-md border border-amber-500/20 shrink-0">
+                            注項 ${i + 1}
+                        </span>
+                        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                            ${ballsHTML}
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col gap-1.5 text-xs text-slate-400 border-t lg:border-t-0 border-slate-800 pt-2 lg:pt-0 w-full lg:w-auto justify-center lg:items-end shrink-0">
+                        <div class="flex items-center justify-between lg:justify-end gap-2">
+                            <span class="text-slate-500">6碼總和：</span>
+                            ${sum6InfoHTML}
+                        </div>
+                        <div class="flex items-center justify-between lg:justify-end gap-2">
+                            <span class="text-slate-500">單雙比例：</span>
+                            <span class="bg-slate-800 px-2.5 py-0.5 rounded-lg"><strong class="text-slate-200">${oddCount}單 ${evenCount}雙</strong></span>
+                        </div>
+                        <div class="flex items-center justify-between lg:justify-end gap-2">
+                            <span class="text-slate-500">波色分佈：</span>
+                            <span class="bg-slate-800 px-2.5 py-0.5 rounded-lg">
+                                <strong class="text-red-400">${colorStats.red}紅</strong> 
+                                <strong class="text-blue-400">${colorStats.blue}藍</strong> 
+                                <strong class="text-emerald-400">${colorStats.green}綠</strong>
+                            </span>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            }
+
+            showToast(`成功生成 ${groupCount} 注投注建議！`);
+        }
+
+        // 複製結果功能
+        function copyResults() {
+            if (generatedResultsList.length === 0) {
+                showToast('尚未生成任何號碼！');
+                return;
+            }
+
+            const text = generatedResultsList.map((nums, idx) => {
+                const formatted = nums.map(n => n < 10 ? '0' + n : n).join(', ');
+                return `注項 ${idx + 1}: ${formatted}`;
+            }).join('\n');
+
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            try {
+                document.execCommand('copy');
+                showToast('已複製所有號碼到剪貼簿！');
+            } catch (err) {
+                showToast('複製失敗，請手動複製。');
+            } finally {
+                document.body.removeChild(textarea);
+            }
+        }
+
+        // 顯示提示訊息
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            if (!toast || !toastMsg) return;
+
+            toastMsg.innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // 頁面初始化時自動計算機率
+        window.onload = function() {
+            updateProbabilityInfo();
+        };
+    </script>
+</body>
+</html>
