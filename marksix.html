@@ -103,18 +103,24 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- 生成位數選擇 -->
                 <div class="space-y-3">
-                    <label class="text-sm font-medium text-slate-300 block">生成號碼數量：</label>
-                    <div class="grid grid-cols-2 gap-3">
+                    <label class="text-sm font-medium text-slate-300 block">投注方式與號碼數量：</label>
+                    <div class="grid grid-cols-3 gap-2.5">
                         <label class="cursor-pointer">
-                            <input type="radio" name="numCount" value="6" checked onchange="updateProbabilityInfo()" class="peer hidden">
-                            <div class="p-3 text-center rounded-xl border border-slate-600 bg-slate-900/50 peer-checked:border-amber-500 peer-checked:bg-amber-500/10 peer-checked:text-amber-400 transition-all font-semibold">
-                                6 個數字 (單式)
+                            <input type="radio" name="numCount" value="6" checked onchange="handleModeChange()" class="peer hidden">
+                            <div class="p-3 text-center rounded-xl border border-slate-600 bg-slate-900/50 peer-checked:border-amber-500 peer-checked:bg-amber-500/10 peer-checked:text-amber-400 transition-all font-semibold text-sm sm:text-base">
+                                6 碼 (單式)
                             </div>
                         </label>
                         <label class="cursor-pointer">
-                            <input type="radio" name="numCount" value="7" onchange="updateProbabilityInfo()" class="peer hidden">
-                            <div class="p-3 text-center rounded-xl border border-slate-600 bg-slate-900/50 peer-checked:border-amber-500 peer-checked:bg-amber-500/10 peer-checked:text-amber-400 transition-all font-semibold">
-                                7 個數字 (複式)
+                            <input type="radio" name="numCount" value="7" onchange="handleModeChange()" class="peer hidden">
+                            <div class="p-3 text-center rounded-xl border border-slate-600 bg-slate-900/50 peer-checked:border-amber-500 peer-checked:bg-amber-500/10 peer-checked:text-amber-400 transition-all font-semibold text-sm sm:text-base">
+                                7 碼 (複式)
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="numCount" value="dantuo" onchange="handleModeChange()" class="peer hidden">
+                            <div class="p-3 text-center rounded-xl border border-slate-600 bg-slate-900/50 peer-checked:border-amber-500 peer-checked:bg-amber-500/10 peer-checked:text-amber-400 transition-all font-semibold text-sm sm:text-base">
+                                膽拖投注
                             </div>
                         </label>
                     </div>
@@ -122,13 +128,40 @@
 
                 <!-- 生成組數選擇 -->
                 <div class="space-y-3">
-                    <label class="text-sm font-medium text-slate-300 block">生成注數：</label>
-                    <select id="groupCount" class="w-full p-3 rounded-xl border border-slate-600 bg-slate-900 text-slate-200 focus:outline-none focus:border-amber-500 font-semibold">
-                        <option value="1">1 注</option>
-                        <option value="5" selected>5 注</option>
-                        <option value="10">10 注</option>
-                        <option value="20">20 注</option>
+                    <label class="text-sm font-medium text-slate-300 block">生成建議組數：</label>
+                    <select id="groupCount" onchange="updateProbabilityInfo()" class="w-full p-3 rounded-xl border border-slate-600 bg-slate-900 text-slate-200 focus:outline-none focus:border-amber-500 font-semibold">
+                        <option value="1">1 組</option>
+                        <option value="5" selected>5 組</option>
+                        <option value="10">10 組</option>
+                        <option value="20">20 組</option>
                     </select>
+                </div>
+            </div>
+
+            <!-- 膽拖專屬設定區域 (預設隱藏) -->
+            <div id="dantuoSettings" class="hidden bg-slate-900/60 p-4 rounded-xl border border-amber-500/40 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2">
+                    <span class="text-sm font-bold text-amber-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-layer-group"></i> 膽拖配置設定
+                    </span>
+                    <span id="dantuoBetSummary" class="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                        每組拆解：1 注 (港幣 $10)
+                    </span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-medium text-slate-300 block">選擇膽碼數量：</label>
+                        <select id="danCount" onchange="updateLegOptions()" class="w-full p-2.5 rounded-lg border border-slate-600 bg-slate-800 text-slate-200 focus:outline-none focus:border-amber-500 text-sm font-semibold">
+                            <option value="3" selected>3 膽 (配最少 3 腳)</option>
+                            <option value="4">4 膽 (配最少 2 腳)</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-medium text-slate-300 block">選擇配腳數量：</label>
+                        <select id="legCount" onchange="updateProbabilityInfo()" class="w-full p-2.5 rounded-lg border border-slate-600 bg-slate-800 text-slate-200 focus:outline-none focus:border-amber-500 text-sm font-semibold">
+                            <!-- 動態生成選項 -->
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -309,9 +342,45 @@
             return 'red';
         }
 
-        // 動態更新中獎機率資訊
+        // 切換投注模式（單式 / 複式 / 膽拖）
+        function handleModeChange() {
+            const mode = document.querySelector('input[name="numCount"]:checked')?.value;
+            const dantuoPanel = document.getElementById('dantuoSettings');
+            if (mode === 'dantuo') {
+                dantuoPanel.classList.remove('hidden');
+                updateLegOptions();
+            } else {
+                dantuoPanel.classList.add('hidden');
+                updateProbabilityInfo();
+            }
+        }
+
+        // 根據膽碼數量更新配腳選項（3膽配最少3腳，4膽配最少2腳）
+        function updateLegOptions() {
+            const danCount = parseInt(document.getElementById('danCount').value);
+            const legSelect = document.getElementById('legCount');
+            const currentVal = parseInt(legSelect.value) || 0;
+            const minLegs = danCount === 3 ? 3 : 2;
+            const maxLegs = 15; // 限制合理上限以維持過濾效率
+
+            legSelect.innerHTML = '';
+            for (let i = minLegs; i <= maxLegs; i++) {
+                const bets = combinations(i, 6 - danCount);
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = `${i} 腳 (共 ${bets} 注)`;
+                if (i === currentVal || (currentVal < minLegs && i === minLegs)) {
+                    opt.selected = true;
+                }
+                legSelect.appendChild(opt);
+            }
+            updateProbabilityInfo();
+        }
+
+        // 動態更新中獎機率資訊與最終注數
         function updateProbabilityInfo() {
-            const numCount = parseInt(document.querySelector('input[name="numCount"]:checked')?.value || 6);
+            const mode = document.querySelector('input[name="numCount"]:checked')?.value || '6';
+            const groupCount = parseInt(document.getElementById('groupCount')?.value || 1);
 
             const config = {
                 excludeConsecutive: document.getElementById('excludeConsecutive')?.checked || false,
@@ -325,27 +394,41 @@
 
             const remaining6Combinations = calculateRemaining6Combinations(config);
             const probTextElem = document.getElementById('probabilityText');
-
             if (!probTextElem) return;
 
-            if (numCount === 6) {
-                const prob = ((1 / remaining6Combinations) * 100).toFixed(8);
-                probTextElem.innerHTML = `
-                    <div class="flex flex-col gap-1 text-slate-300">
-                        <div>標準 6 碼頭獎機率：約 <span class="text-amber-400 font-bold">1 / ${remaining6Combinations.toLocaleString()}</span> (<span class="text-emerald-400 font-semibold">${prob}%</span>)</div>
-                        <div class="text-[11px] text-slate-400">已從原基數 13,983,816 中排除約 <span class="text-rose-400 font-semibold">${(TOTAL_6_COMBINATIONS - remaining6Combinations).toLocaleString()}</span> 種極端不常開出之組合。</div>
-                    </div>
-                `;
-            } else {
-                // 7 個號碼複式可拆解成 7 注 6 碼單式
-                const prob = ((7 / remaining6Combinations) * 100).toFixed(7);
-                probTextElem.innerHTML = `
-                    <div class="flex flex-col gap-1 text-slate-300">
-                        <div>7 碼複式頭獎機率：約 <span class="text-amber-400 font-bold">7 / ${remaining6Combinations.toLocaleString()}</span> (約 1 / ${Math.round(remaining6Combinations / 7).toLocaleString()} 或 <span class="text-emerald-400 font-semibold">${prob}%</span>)</div>
-                        <div class="text-[11px] text-slate-400">已從原基數 13,983,816 中排除約 <span class="text-rose-400 font-semibold">${(TOTAL_6_COMBINATIONS - remaining6Combinations).toLocaleString()}</span> 種極端組合。</div>
-                    </div>
-                `;
+            let betsPerGroup = 1;
+            let modeTitle = '標準 6 碼頭獎機率';
+
+            if (mode === '7') {
+                betsPerGroup = 7;
+                modeTitle = '7 碼複式頭獎機率';
+            } else if (mode === 'dantuo') {
+                const danCount = parseInt(document.getElementById('danCount')?.value || 3);
+                const legCount = parseInt(document.getElementById('legCount')?.value || 3);
+                betsPerGroup = combinations(legCount, 6 - danCount);
+                modeTitle = `${danCount}膽${legCount}腳 頭獎機率`;
+
+                const summaryEl = document.getElementById('dantuoBetSummary');
+                if (summaryEl) {
+                    summaryEl.innerHTML = `每組拆解：<strong class="text-amber-300">${betsPerGroup} 注</strong> (港幣 $${(betsPerGroup * 10).toLocaleString()})`;
+                }
             }
+
+            const totalBets = betsPerGroup * groupCount;
+            const prob = Math.min((betsPerGroup / remaining6Combinations) * 100, 100).toFixed(7);
+            const approxDenominator = Math.max(Math.round(remaining6Combinations / betsPerGroup), 1);
+
+            probTextElem.innerHTML = `
+                <div class="flex flex-col gap-1 text-slate-300">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <span>${modeTitle}：約 <span class="text-amber-400 font-bold">${betsPerGroup} / ${remaining6Combinations.toLocaleString()}</span> (約 1 / ${approxDenominator.toLocaleString()} 或 <span class="text-emerald-400 font-semibold">${prob}%</span>)</span>
+                        <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-bold">
+                            最終總注數：${totalBets} 注 ($${(totalBets * 10).toLocaleString()})
+                        </span>
+                    </div>
+                    <div class="text-[11px] text-slate-400">已從原基數 13,983,816 中排除約 <span class="text-rose-400 font-semibold">${(TOTAL_6_COMBINATIONS - remaining6Combinations).toLocaleString()}</span> 種極端不常開出之組合。</div>
+                </div>
+            `;
         }
 
         // 隨機抽取 N 個不重複號碼 (1-49)
@@ -401,7 +484,7 @@
         }
 
         // 檢查是否為極端總和 (<80 或 >220)
-        // 修正：無論是 6 位還是 7 位號碼，均以其拆解出的 6 位數組合進行總和檢驗
+        // 修正：無論是 6 位、7 位或膽拖號碼，均以其拆解出的 6 位數組合進行總和檢驗
         function isExtremeSum(arr) {
             if (arr.length === 6) {
                 const sum = arr.reduce((acc, curr) => acc + curr, 0);
@@ -413,10 +496,40 @@
                 const subSet = arr.filter((_, idx) => idx !== i);
                 const subSum = subSet.reduce((acc, curr) => acc + curr, 0);
                 if (subSum < 80 || subSum > 220) {
-                    return true; // 只要其中一組 6 位數組合落入極端範圍即判定為極端
+                    return true;
                 }
             }
             return false;
+        }
+
+        // 取得陣列中所有 k 個元素的組合
+        function getCombinationsList(arr, k) {
+            const results = [];
+            function helper(start, combo) {
+                if (combo.length === k) {
+                    results.push([...combo]);
+                    return;
+                }
+                for (let i = start; i < arr.length; i++) {
+                    combo.push(arr[i]);
+                    helper(i + 1, combo);
+                    combo.pop();
+                }
+            }
+            helper(0, []);
+            return results;
+        }
+
+        // 檢查單一組合是否符合過濾條件
+        function isValidCombo(nums, config) {
+            if (config.excludeConsecutive && hasConsecutive(nums)) return false;
+            if (config.excludeAllOddEven && isAllOddOrEven(nums)) return false;
+            if (config.excludeSameColor && isSameColor(nums)) return false;
+            if (config.excludeSameDecade && isSameDecade(nums)) return false;
+            if (config.excludeExtremeSum && isExtremeSum(nums)) return false;
+            if (config.excludeSameLastDigit && isSameLastDigit(nums)) return false;
+            if (config.excludeSkipConsecutive && hasSkipConsecutive(nums)) return false;
+            return true;
         }
 
         // 檢查是否全同尾數 (個位數相同)
@@ -433,32 +546,61 @@
             while (attempts < maxAttempts) {
                 attempts++;
                 const nums = getRandomNumbers(count);
-
-                // 條件 1: 排除連號
-                if (config.excludeConsecutive && hasConsecutive(nums)) continue;
-
-                // 條件 2: 排除全單或全雙
-                if (config.excludeAllOddEven && isAllOddOrEven(nums)) continue;
-
-                // 條件 3: 排除同色球
-                if (config.excludeSameColor && isSameColor(nums)) continue;
-
-                // 條件 4: 排除全同十位數區間
-                if (config.excludeSameDecade && isSameDecade(nums)) continue;
-
-                // 條件 5: 排除極端總和 (<80 或 >220)
-                if (config.excludeExtremeSum && isExtremeSum(nums)) continue;
-
-                // 條件 6: 排除全同尾數
-                if (config.excludeSameLastDigit && isSameLastDigit(nums)) continue;
-
-                // 條件 7: 排除 3 個或以上單/雙數連號 (如 1,3,5 或 2,4,6)
-                if (config.excludeSkipConsecutive && hasSkipConsecutive(nums)) continue;
-
-                return nums; // 符合所有條件
+                if (isValidCombo(nums, config)) {
+                    return nums;
+                }
             }
 
             return getRandomNumbers(count);
+        }
+
+        // 生成單組膽拖號碼 (符合條件)
+        function generateSingleDantuoSet(danCount, legCount, config) {
+            let attempts = 0;
+            const maxAttempts = 6000;
+            const totalNeeded = danCount + legCount;
+
+            while (attempts < maxAttempts) {
+                attempts++;
+                // 先隨機抽取不重複的總號碼，再分配膽與腳（保持各自升序排列）
+                const pool = [];
+                while (pool.length < totalNeeded) {
+                    const rand = Math.floor(Math.random() * 49) + 1;
+                    if (!pool.includes(rand)) pool.push(rand);
+                }
+
+                const dans = pool.slice(0, danCount).sort((a, b) => a - b);
+                const legs = pool.slice(danCount).sort((a, b) => a - b);
+                const allSorted = [...pool].sort((a, b) => a - b);
+
+                // 整體號碼不可有連號或3碼跳號（若勾選），避免膽拖放一起時出現連號
+                if (config.excludeConsecutive && hasConsecutive(allSorted)) continue;
+                if (config.excludeSkipConsecutive && hasSkipConsecutive(allSorted)) continue;
+
+                // 拆解出所有 6 碼單式注項，確保每注皆符合所選排除條件
+                const legCombos = getCombinationsList(legs, 6 - danCount);
+                let allSubCombosValid = true;
+                for (const legSub of legCombos) {
+                    const full6 = [...dans, ...legSub].sort((a, b) => a - b);
+                    if (!isValidCombo(full6, config)) {
+                        allSubCombosValid = false;
+                        break;
+                    }
+                }
+
+                if (allSubCombosValid) {
+                    return { dans, legs, all: allSorted, subCombosCount: legCombos.length };
+                }
+            }
+
+            // 備援回傳
+            const fallbackPool = getRandomNumbers(totalNeeded);
+            return {
+                dans: fallbackPool.slice(0, danCount),
+                legs: fallbackPool.slice(danCount),
+                all: fallbackPool,
+                subCombosCount: combinations(legCount, 6 - danCount)
+            };
         }
 
         // 全局紀錄目前生成的結果
@@ -466,7 +608,7 @@
 
         // 主生成函式
         function generateNumbers() {
-            const numCount = parseInt(document.querySelector('input[name="numCount"]:checked').value);
+            const mode = document.querySelector('input[name="numCount"]:checked').value;
             const groupCount = parseInt(document.getElementById('groupCount').value);
 
             const config = {
@@ -483,30 +625,59 @@
             container.innerHTML = '';
             generatedResultsList = [];
 
+            let grandTotalBets = 0;
+
             for (let i = 0; i < groupCount; i++) {
-                const nums = generateSingleValidSet(numCount, config);
-                generatedResultsList.push(nums);
+                let nums = [];
+                let dans = [];
+                let legs = [];
+                let betsInThisCard = 1;
+                let sums6 = [];
+
+                if (mode === 'dantuo') {
+                    const danCount = parseInt(document.getElementById('danCount').value);
+                    const legCount = parseInt(document.getElementById('legCount').value);
+                    const dtResult = generateSingleDantuoSet(danCount, legCount, config);
+                    dans = dtResult.dans;
+                    legs = dtResult.legs;
+                    nums = dtResult.all;
+                    betsInThisCard = dtResult.subCombosCount;
+
+                    const legCombos = getCombinationsList(legs, 6 - danCount);
+                    sums6 = legCombos.map(lc => [...dans, ...lc].reduce((a, b) => a + b, 0));
+
+                    generatedResultsList.push({ type: 'dantuo', dans, legs, bets: betsInThisCard });
+                } else {
+                    const numCount = parseInt(mode);
+                    nums = generateSingleValidSet(numCount, config);
+                    betsInThisCard = numCount === 6 ? 1 : 7;
+
+                    if (numCount === 6) {
+                        sums6 = [nums.reduce((a, b) => a + b, 0)];
+                    } else {
+                        for (let k = 0; k < nums.length; k++) {
+                            const subSet = nums.filter((_, idx) => idx !== k);
+                            sums6.push(subSet.reduce((a, b) => a + b, 0));
+                        }
+                    }
+
+                    generatedResultsList.push({ type: 'standard', nums, bets: betsInThisCard });
+                }
+
+                grandTotalBets += betsInThisCard;
 
                 // 計算統計數據
                 const oddCount = nums.filter(n => n % 2 !== 0).length;
                 const evenCount = nums.length - oddCount;
-                const sumTotal = nums.reduce((acc, curr) => acc + curr, 0); // 7位數或6位數總和
                 
-                // 計算 6 位數組合的總和（若是 7 位數，顯示 7 組 6 位數組合的總和範圍）
                 let sum6InfoHTML = '';
-                if (nums.length === 6) {
-                    sum6InfoHTML = `<span class="bg-slate-800 px-2.5 py-1 rounded-lg">6碼總和: <strong class="text-amber-400">${sumTotal}</strong></span>`;
+                if (sums6.length === 1) {
+                    sum6InfoHTML = `<span class="bg-slate-800 px-2.5 py-1 rounded-lg">6碼總和: <strong class="text-amber-400">${sums6[0]}</strong></span>`;
                 } else {
-                    // 7 位數拆解 7 組 6 位數組合總和
-                    const sums6 = [];
-                    for (let k = 0; k < nums.length; k++) {
-                        const subSet = nums.filter((_, idx) => idx !== k);
-                        sums6.push(subSet.reduce((a, b) => a + b, 0));
-                    }
                     const minSum6 = Math.min(...sums6);
                     const maxSum6 = Math.max(...sums6);
                     const avgSum6 = Math.round(sums6.reduce((a, b) => a + b, 0) / sums6.length);
-                    sum6InfoHTML = `<span class="bg-slate-800 px-2.5 py-1 rounded-lg" title="7組單式拆解總和介乎 ${minSum6} 至 ${maxSum6}">6碼總和: <strong class="text-amber-400">${minSum6}~${maxSum6}</strong> <span class="text-slate-400 text-[10px]">(均${avgSum6})</span></span>`;
+                    sum6InfoHTML = `<span class="bg-slate-800 px-2.5 py-1 rounded-lg" title="共 ${sums6.length} 組單式拆解總和介乎 ${minSum6} 至 ${maxSum6}">6碼總和: <strong class="text-amber-400">${minSum6}~${maxSum6}</strong> <span class="text-slate-400 text-[10px]">(均${avgSum6})</span></span>`;
                 }
 
                 const colorStats = { red: 0, blue: 0, green: 0 };
@@ -516,21 +687,60 @@
                 const card = document.createElement('div');
                 card.className = "bg-slate-900/60 p-3.5 sm:p-4 rounded-xl border border-slate-700/80 flex flex-col lg:flex-row items-center justify-between gap-3 transition-all hover:border-slate-600";
 
-                let ballsHTML = nums.map(num => {
-                    const color = getBallColor(num);
-                    const formattedNum = num < 10 ? '0' + num : num;
-                    return `<div class="ball ball-${color}">${formattedNum}</div>`;
-                }).join('');
+                let ballsSectionHTML = '';
+                if (mode === 'dantuo') {
+                    const danBallsHTML = dans.map(num => {
+                        const color = getBallColor(num);
+                        const formattedNum = num < 10 ? '0' + num : num;
+                        return `<div class="ball ball-${color} ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-900">${formattedNum}</div>`;
+                    }).join('');
+
+                    const legBallsHTML = legs.map(num => {
+                        const color = getBallColor(num);
+                        const formattedNum = num < 10 ? '0' + num : num;
+                        return `<div class="ball ball-${color}">${formattedNum}</div>`;
+                    }).join('');
+
+                    ballsSectionHTML = `
+                        <div class="flex flex-col gap-2 max-w-full overflow-x-auto py-1 no-scrollbar">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-md border border-amber-500/20 shrink-0">
+                                    注項 ${i + 1} · ${betsInThisCard}注
+                                </span>
+                                <span class="text-[11px] font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded shrink-0">膽碼 (${dans.length})</span>
+                                <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                                    ${danBallsHTML}
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 pl-1">
+                                <span class="text-[11px] font-bold text-sky-300 bg-sky-500/20 px-2 py-0.5 rounded shrink-0">配腳 (${legs.length})</span>
+                                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                    ${legBallsHTML}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    const ballsHTML = nums.map(num => {
+                        const color = getBallColor(num);
+                        const formattedNum = num < 10 ? '0' + num : num;
+                        return `<div class="ball ball-${color}">${formattedNum}</div>`;
+                    }).join('');
+
+                    ballsSectionHTML = `
+                        <div class="flex items-center gap-2 max-w-full overflow-x-auto py-1 no-scrollbar">
+                            <span class="text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-md border border-amber-500/20 shrink-0">
+                                注項 ${i + 1} (${betsInThisCard}注)
+                            </span>
+                            <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                                ${ballsHTML}
+                            </div>
+                        </div>
+                    `;
+                }
 
                 card.innerHTML = `
-                    <div class="flex items-center gap-2 max-w-full overflow-x-auto py-1 no-scrollbar">
-                        <span class="text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-md border border-amber-500/20 shrink-0">
-                            注項 ${i + 1}
-                        </span>
-                        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                            ${ballsHTML}
-                        </div>
-                    </div>
+                    ${ballsSectionHTML}
                     
                     <div class="flex flex-col gap-1.5 text-xs text-slate-400 border-t lg:border-t-0 border-slate-800 pt-2 lg:pt-0 w-full lg:w-auto justify-center lg:items-end shrink-0">
                         <div class="flex items-center justify-between lg:justify-end gap-2">
@@ -555,7 +765,16 @@
                 container.appendChild(card);
             }
 
-            showToast(`成功生成 ${groupCount} 注投注建議！`);
+            // 在結果列表底部加入總注數彙總橫幅
+            const summaryBanner = document.createElement('div');
+            summaryBanner.className = "bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-amber-500/15 border border-amber-500/30 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm";
+            summaryBanner.innerHTML = `
+                <span class="text-slate-300 font-medium"><i class="fa-solid fa-receipt text-amber-400 mr-1.5"></i>本次生成共 <strong class="text-white">${groupCount}</strong> 組建議</span>
+                <span class="text-amber-300 font-bold">最終合計注數：${grandTotalBets.toLocaleString()} 注 <span class="text-slate-400 font-normal">(每注$10 總計 $${(grandTotalBets * 10).toLocaleString()})</span></span>
+            `;
+            container.appendChild(summaryBanner);
+
+            showToast(`成功生成 ${groupCount} 組建議（共 ${grandTotalBets} 注）！`);
         }
 
         // 複製結果功能
@@ -565,10 +784,20 @@
                 return;
             }
 
-            const text = generatedResultsList.map((nums, idx) => {
-                const formatted = nums.map(n => n < 10 ? '0' + n : n).join(', ');
-                return `注項 ${idx + 1}: ${formatted}`;
-            }).join('\n');
+            let totalBets = 0;
+            const textLines = generatedResultsList.map((item, idx) => {
+                totalBets += item.bets;
+                if (item.type === 'dantuo') {
+                    const formattedDans = item.dans.map(n => n < 10 ? '0' + n : n).join(', ');
+                    const formattedLegs = item.legs.map(n => n < 10 ? '0' + n : n).join(', ');
+                    return `注項 ${idx + 1} [膽拖 ${item.bets}注]: 膽(${formattedDans}) + 腳(${formattedLegs})`;
+                } else {
+                    const formatted = item.nums.map(n => n < 10 ? '0' + n : n).join(', ');
+                    return `注項 ${idx + 1} (${item.bets}注): ${formatted}`;
+                }
+            });
+            textLines.push(`\n合計最終注數: ${totalBets} 注 (港幣 $${totalBets * 10})`);
+            const text = textLines.join('\n');
 
             const textarea = document.createElement('textarea');
             textarea.value = text;
